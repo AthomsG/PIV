@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import os
 
-def get_plane(path_to_image, coords_OG, coords_BEV, draw_squares=False):
+def get_plane(path_to_image, coords_OG, coords_BEV, output_dir, draw_squares=False):
 
     p2 = coords_OG
     p1 = coords_BEV
@@ -44,20 +45,22 @@ def get_plane(path_to_image, coords_OG, coords_BEV, draw_squares=False):
 
                         transformed[i,j,:] = im[y1,x1,:]
 
-    plt.imsave("transformed.png",transformed)
+    plt.imsave(output_dir + "/transformed.png",transformed)
 
 
 def main():
     user_input = sys.argv
 
+    input_dir  = user_input[3]
+    output_dir = user_input[2]
+
     #THESE HAVE TO COME FROM ARUCO MARKERS!
     coords_BEV = [(185, 20), (155, 295), (92, 51), (78, 215)]   #COORDINATES FROM THE BIRDS EYE VIEW
     coords_OG  = [(160, 25), (160, 250), (350, 25), (350, 250)]
 
-    get_plane(path_to_image='./img/og.png', coords_OG=coords_OG, coords_BEV=coords_BEV)
+    get_plane(path_to_image='./test_files/og.png', coords_OG=coords_OG, coords_BEV=coords_BEV, output_dir=output_dir)
 
-    print('what do you mean by ', user_input[1:])
-
+    print('files in input directory: ', os.listdir(input_dir))
 
 if __name__ == '__main__':
     main()
