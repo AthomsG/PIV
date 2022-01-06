@@ -11,7 +11,7 @@ def get_average(w):
     return [int(x), int(y)]
 ################################################################
 
-def get_corners(path_to_image): # GET COORDINATES FROM ARUCO MARKERS
+def get_corners(path_to_image, expected_IDS=None): #GET COORDINATES FROM ARUCO MARKERS
     dictionary = cv2.aruco.Dictionary_get(cv2.aruco.DICT_7X7_50)
     parameters = cv2.aruco.DetectorParameters_create()
 
@@ -19,16 +19,20 @@ def get_corners(path_to_image): # GET COORDINATES FROM ARUCO MARKERS
     markerCorners, markerIds, rejectedCandidates = cv2.aruco.detectMarkers(img, dictionary, parameters=parameters)
 
     corners = dict()
-    success = (len(markerIds)==4)
+    if (expected_IDS):
+        success = (markerIds.sort()==expected_IDS.sort())
+    else:
+        success = 1
+        corners['IDS']=markerIds
 
     if (success):
-        for i in range(4):
+        for i in range(len(markerIds)):
             corners[markerIds[i][0]] = [[int(x), int(y)] for [x, y] in markerCorners[i].tolist()[0]]
     else:
         corners = None
     return corners
 
-def get_plane(path_to_image, corners, output_dir, template_points, draw_squares=False, template_size=(1654, 2339), scale_down=5):
+def get_plane(path_to_image, corners, output_dir, template_points, IDS, template_size, draw_squares=True, scale_down=5):
     '''
     ##-------------------------------------------------------INPUTS------------------------------------------------------------------##
         path_to_image   - address of image to which we want to apply warping;
@@ -42,9 +46,10 @@ def get_plane(path_to_image, corners, output_dir, template_points, draw_squares=
         scale_down      - scaling factor for produced image. Trades resolution for better performance.
     ##-------------------------------------------------------------------------------------------------------------------------------##
     '''
+    assert len(IDS) >= 4, "At least 4 points are needed to compute homography matrix. Undetermined system has infinte solutions."
     frame=path_to_image[-8:-4]
 
-    p1 = [get_average(corners[ID]) for ID in [0, 1, 2, 3]]
+    p1 = [get_average(corners[ID]) for ID in IDS]
     p1 = [[y, x] for [x, y] in p1]
     p2 = [[int(y/scale_down), int(x/scale_down)] for [x, y] in template_points] #SCALE DOWN TEMPLATE IMAGE TO SAVE COMPUTATION TIME
 
@@ -52,12 +57,12 @@ def get_plane(path_to_image, corners, output_dir, template_points, draw_squares=
     im = im[:,:,:3] #REMOVES ALPHA CHANNEL (A PROBLEM WITH SOME .PNG FILES)
 
     if draw_squares:
-        for i in range(4):
+        for i in range(len(IDS)):
             im[p1[i][0]-10:p1[i][0]+10,p1[i][1]-10:p1[i][1]+10,:] = [250,0,0]
 
-    A = np.zeros((8,9))
+    A = np.zeros((len(IDS)*2,9))
 
-    for i in range(4):
+    for i in range(len(IDS)):
             A[i*2,:] = [ p1[i][1], p1[i][0], 1, 0, 0, 0, -p2[i][1]*p1[i][1], -p2[i][1]*p1[i][0], -p2[i][1] ]
             A[i*2+1,:] = [0, 0, 0, p1[i][1], p1[i][0], 1, -p2[i][0]*p1[i][1], -p2[i][0]*p1[i][0], -p2[i][0] ]
     #SVD
@@ -70,9 +75,8 @@ def get_plane(path_to_image, corners, output_dir, template_points, draw_squares=
     (y_min, y_max) = (0, int(template_size[1]/scale_down))
 
     transformed = np.zeros((int(y_max),int(x_max),3))
-    #INVERSE HOMOGRAPHY MATRIX.
-    #CORRESPONDING PIXELS IN OUTPUT IMAGE TO PIXELS IN INPUT IMAGE REMOVES 'UNFILLED' PIXEL PROBLEM
-    Hi = np.linalg.inv(H)
+    #WE CORRESPONDED PIXELS IN OUTPUT IMAGE TO PIXELS IN INPUT IMAGE WITH INVERSE H, IN ORDER TO 'FILL' THE BLACK PIXELS THAT WOULD EXIST IF WE USED H ON THE INPUT IMAGE.
+    Hi = np.linalg.inv(H) #INVERSE HOMOGRAPHY MATRIX.
     for i in range(transformed.shape[0]):
             for j in range(transformed.shape[1]):
                 uv = np.array([[j+x_min],[i+y_min],[1]])
@@ -80,8 +84,9 @@ def get_plane(path_to_image, corners, output_dir, template_points, draw_squares=
                 x1=int(xy[0]/xy[2])
                 y1=int(xy[1]/xy[2])
                 if x1>0 and y1>0 and y1<len(im) and x1<len(im[0]): #FIXES "OUT OF BOUNDS" INDEX ERROR
-                    transformed[i,j,:] = im[y1,x1,:]/250
+                    transformed[i,j,:] = im[y1,x1,:]/250 #NORMALIZATION NEEDED TO SUCESSFULY SAVE IMAGE
 
+    #OUTPUTS PLOT WITH ORIGINAL IMAGE ON THE LEFT AND OUTPUT IMAGE ON THE RIGHT
     if (draw_squares):
         fig = plt.figure()
         ax1 = fig.add_subplot(1, 2, 1)
@@ -96,9 +101,10 @@ def get_plane(path_to_image, corners, output_dir, template_points, draw_squares=
 def main():
     user_input = sys.argv
 
-    input_dir  = user_input[3]
-    output_dir = user_input[2]
-    template   = user_input[1]
+    task       = user_input[0]
+    input_dir  = user_input[4]
+    output_dir = user_input[3]
+    template   = user_input[2]
     image_files= sorted(os.listdir(input_dir))
 
     #CHECK IF OUTPUT FILE EXISTS. IF NOT, CREATE DIRECTORY
@@ -106,7 +112,8 @@ def main():
         os.mkdir(output_dir)
 
     tmp_corners     = get_corners(template)
-    coords_template = [get_average(tmp_corners[ID]) for ID in [0, 1, 2, 3]]
+    IDS             = [int(id) for id in tmp_corners['IDS']]
+    coords_template = [get_average(tmp_corners[id]) for id in IDS]
     template_image  = plt.imread(template)
     template_size   = (len(template_image[0]), len(template_image))
 
@@ -118,9 +125,10 @@ def main():
             new_corners = get_corners(path_to_image)
             if (new_corners): #IF ARUCO MARKERS ARE NOT DETECTED, WE USE THE COORDINATES FROM THE PREVIOUS FRAME
                 corners = new_corners
-            get_plane(path_to_image=path_to_image, corners=corners, template_points=coords_template, output_dir=output_dir, template_size=template_size)
+            get_plane(path_to_image=path_to_image, corners=corners, template_points=coords_template, output_dir=output_dir, template_size=template_size, IDS=IDS)
         else:
-            print(path_to_image)
+            print(path_to_image + 'is empty. Closing program')
+            return 1
         count+=1
     print ('\rExecution Successful!                              ')
 
