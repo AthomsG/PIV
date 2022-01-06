@@ -2,7 +2,7 @@
 
 This repository contains all the files needed to run the first task of the PIV project.
 
-The aim of this project is obtain a Birds Eye View perspective of a sheet of paper from video. This is achieved in the 1st stage by determining the homography matrix by solving least squares with single value decomposition.
+The aim of this project is obtain a Birds Eye View perspective of a sheet of paper from video.\\ This is achieved in the 1st stage by determining the homography matrix by solving least squares with single value decomposition.
 
 To run the program, go to `/PIV/1st_submission` directory and type:
 
