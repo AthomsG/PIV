@@ -28,7 +28,7 @@ def get_corners(path_to_image): # GET COORDINATES FROM ARUCO MARKERS
         corners = None
     return corners
 
-def get_plane(path_to_image, corners, output_dir, template_points, draw_squares=True, template_size=(1654, 2339), scale_down=20):
+def get_plane(path_to_image, corners, output_dir, template_points, draw_squares=False, template_size=(1654, 2339), scale_down=5):
     '''
     ##-------------------------------------------------------INPUTS------------------------------------------------------------------##
         path_to_image   - address of image to which we want to apply warping;
@@ -92,7 +92,7 @@ def get_plane(path_to_image, corners, output_dir, template_points, draw_squares=
         fig.savefig(output_dir+'/'+frame+'.png')
         plt.close('all')
     else:
-        plt.imsave(transformed)
+        plt.imsave(output_dir+'/'+frame+'.png', transformed)
 
 def main():
     user_input = sys.argv
@@ -124,7 +124,6 @@ def main():
             print(path_to_image)
         count+=1
     print ('\rExecution Successful!                              ')
-    return 0
 
 if __name__ == '__main__':
     main()
