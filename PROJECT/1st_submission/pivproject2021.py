@@ -54,7 +54,6 @@ def get_plane(path_to_image, corners, output_dir, template_points, draw_squares=
     if draw_squares:
         for i in range(4):
             im[p1[i][0]-10:p1[i][0]+10,p1[i][1]-10:p1[i][1]+10,:] = [250,0,0]
-            im[p2[i][0]-10:p2[i][0]+10,p2[i][1]-10:p2[i][1]+10,:] = [250,250,250]
 
     A = np.zeros((8,9))
 
