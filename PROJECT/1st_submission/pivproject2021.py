@@ -32,7 +32,7 @@ def get_corners(path_to_image, expected_IDS=None): #GET COORDINATES FROM ARUCO M
         corners = None
     return corners
 
-def get_plane(path_to_image, corners, output_dir, template_points, IDS, template_size, draw_squares=False, scale_down=20):
+def get_plane(path_to_image, corners, output_dir, template_points, IDS, template_size, draw_squares=False, scale_down=5):
     '''
     ##-------------------------------------------------------INPUTS------------------------------------------------------------------##
         path_to_image   - address of image to which we want to apply warping;
