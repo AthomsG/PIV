@@ -32,7 +32,7 @@ def get_corners(path_to_image, expected_IDS=None): #GET COORDINATES FROM ARUCO M
         corners = None
     return corners
 
-def get_plane(path_to_image, corners, output_dir, template_points, IDS, template_size, draw_squares=False, scale_down=5):
+def get_plane(path_to_image, corners, output_dir, template_points, IDS, template_size, draw_squares=False, scale_down=20):
     '''
     ##-------------------------------------------------------INPUTS------------------------------------------------------------------##
         path_to_image   - address of image to which we want to apply warping;
@@ -84,7 +84,9 @@ def get_plane(path_to_image, corners, output_dir, template_points, IDS, template
                 x1=int(xy[0]/xy[2])
                 y1=int(xy[1]/xy[2])
                 if x1>0 and y1>0 and y1<len(im) and x1<len(im[0]): #FIXES "OUT OF BOUNDS" INDEX ERROR
-                    transformed[i,j,:] = im[y1,x1,:]/250 #NORMALIZATION NEEDED TO SUCESSFULY SAVE IMAGE
+                    #print(im[y1,x1,:])
+                    transformed[i,j,:] = im[y1,x1,:]/260 #NORMALIZATION NEEDED TO SUCESSFULY SAVE IMAGE.
+                    #SOME IMAGES HAD PIXELS WITH MORE THAN 250 IN ONE OF THE CHANNELS
 
     #OUTPUTS PLOT WITH ORIGINAL IMAGE ON THE LEFT AND OUTPUT IMAGE ON THE RIGHT
     if (draw_squares):
@@ -93,10 +95,10 @@ def get_plane(path_to_image, corners, output_dir, template_points, IDS, template
         ax2 = fig.add_subplot(1, 2, 2)
         ax1.imshow(im)
         ax2.imshow(transformed)
-        fig.savefig(output_dir+'/'+frame+'.png')
+        fig.savefig(output_dir+'/'+frame+'.jpg')
         plt.close('all')
     else:
-        plt.imsave(output_dir+'/'+frame+'.png', transformed)
+        plt.imsave(output_dir+'/'+frame+'.jpg', transformed)
 
 def main():
     user_input = sys.argv
