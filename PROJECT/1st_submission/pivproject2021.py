@@ -20,7 +20,7 @@ def get_corners(path_to_image, expected_IDS=None): #GET COORDINATES FROM ARUCO M
 
     corners = dict()
     if (expected_IDS):
-        success = (markerIds.sort()==expected_IDS.sort())
+        success = (len(markerIds)==len(expected_IDS))
     else:
         success = 1
         corners['IDS']=markerIds
@@ -122,7 +122,7 @@ def main():
         print ("\rProcessing image: " + str(count) + " of " + str(len(image_files)) + ' filename: ' + image_file, end='')
         path_to_image=input_dir+'/'+image_file
         if (os.path.isfile(path_to_image)):
-            new_corners = get_corners(path_to_image)
+            new_corners = get_corners(path_to_image, coords_template)
             if (new_corners): #IF ARUCO MARKERS ARE NOT DETECTED, WE USE THE COORDINATES FROM THE PREVIOUS FRAME
                 corners = new_corners
             get_plane(path_to_image=path_to_image, corners=corners, template_points=coords_template, output_dir=output_dir, template_size=template_size, IDS=IDS)
@@ -130,7 +130,7 @@ def main():
             print(path_to_image + 'is empty. Closing program')
             return 1
         count+=1
-    print ('\rExecution Successful!                              ')
+    print ('\rExecution Successful!                                        ')
 
 if __name__ == '__main__':
     main()
